@@ -1,0 +1,195 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  Int                  @id @default(autoincrement())
+  username            String               @unique
+  email               String               @unique
+  password            String
+  role                Role
+  mahasiswa           Mahasiswa?
+  dosen               Dosen?
+  createdBoards       Board[]              @relation("CreatedBoards")
+  ownedOrganizations  Organization[]       @relation("UserOwnsOrganizations")
+  organizationMembers OrganizationMember[]
+  auditLogs           AuditLog[]
+  cardAssignees       CardAssignee[]
+  revisions           Revision[]
+  notifications       Notification[]
+  invitations         Invitation[]         @relation("UserInvitations")
+}
+
+model Mahasiswa {
+  id       Int    @id @default(autoincrement())
+  userId   Int    @unique
+  user     User   @relation(fields: [userId], references: [id])
+  nim      String @unique
+  nama     String
+  fakultas String
+  prodi    String
+}
+
+model Dosen {
+  id     Int    @id @default(autoincrement())
+  userId Int    @unique
+  user   User   @relation(fields: [userId], references: [id])
+  nip    String @unique
+  nama   String
+}
+
+model Organization {
+  id      String @id @default(cuid())
+  name    String
+  ownerId Int
+  owner   User   @relation("UserOwnsOrganizations", fields: [ownerId], references: [id])
+
+  members      OrganizationMember[]
+  boards       Board[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  limits       OrgLimit?
+  subscription OrgSubscription?
+  invitations  Invitation[]
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  user           User         @relation(fields: [userId], references: [id])
+  userId         Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  role           OrgRole      @default(MEMBER)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([userId, organizationId])
+}
+
+model Invitation {
+  id             String   @id @default(cuid())
+  organizationId String
+  email          String
+  status         String   @default("pending")
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  userId Int?
+  user   User? @relation("UserInvitations", fields: [userId], references: [id]) // 🧩 relasi match
+
+  @@unique([organizationId, email])
+}
+
+model Board {
+  id             String       @id @default(cuid())
+  title          String
+  background     String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  creator        User         @relation("CreatedBoards", fields: [creatorId], references: [id])
+  creatorId      Int
+  cards          Card[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  auditLogs      AuditLog[]
+}
+
+model Card {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  deadline    DateTime?
+  board       Board          @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId     String
+  assignees   CardAssignee[]
+  revisions   Revision[]
+  files       File[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model CardAssignee {
+  id     String @id @default(cuid())
+  card   Card   @relation(fields: [cardId], references: [id])
+  cardId String
+  user   User   @relation(fields: [userId], references: [id])
+  userId Int
+
+  @@unique([cardId, userId])
+}
+
+model File {
+  id        String   @id @default(cuid())
+  url       String
+  name      String
+  type      String
+  card      Card     @relation(fields: [cardId], references: [id])
+  cardId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Revision {
+  id        String   @id @default(cuid())
+  card      Card     @relation(fields: [cardId], references: [id])
+  cardId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  content   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  board     Board    @relation(fields: [boardId], references: [id])
+  boardId   String
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+model OrgLimit {
+  id             String       @id @default(cuid())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String       @unique
+  maxBoards      Int          @default(3)
+  maxMembers     Int          @default(10)
+}
+
+model OrgSubscription {
+  id             String       @id @default(cuid())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String       @unique
+  isActive       Boolean      @default(false)
+  startedAt      DateTime?
+  endsAt         DateTime?
+}
+
+// ENUMS
+
+enum Role {
+  DOSEN
+  MAHASISWA
+}
+
+enum OrgRole {
+  OWNER
+  MEMBER
+}
