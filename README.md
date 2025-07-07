@@ -1,6 +1,6 @@
-# 🛠️ Boardify Mobile - Backend API
+# 🛠️ Boardify Express
 
-**Boardify Mobile - Backend** adalah REST API yang dibangun menggunakan **Node.js (Express)** dan **Prisma ORM**, dirancang untuk mendukung aplikasi **Boardify Mobile** — sebuah platform bimbingan skripsi yang mempermudah kolaborasi antara mahasiswa dan dosen melalui sistem task dan revisi yang terstruktur.
+**Boardify Express** adalah REST API yang dibangun menggunakan **Node.js (Express)** dan **Prisma ORM**, dirancang untuk mendukung aplikasi **Boardify Mobile** — sebuah platform bimbingan skripsi yang mempermudah kolaborasi antara mahasiswa dan dosen melalui sistem task dan revisi yang terstruktur.
 
 > Backend ini khusus dikembangkan untuk versi mobile dari platform **Boardify**  
 > 👉 Boardify Mobile: [https://github.com/SkylarkOff/Boardify](https://github.com/SkylarkOff/Boardify)
